@@ -1,6 +1,6 @@
 # README
 
-This is the README file for the Makromusic Mobile Frontend GitHub Projects Version History Generator.
+This is the README file for the makromusic Mobile Frontend GitHub Projects Version History Generator.
 
 ## Introduction
 
