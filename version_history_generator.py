@@ -43,7 +43,7 @@ time.sleep(3)
 
 # Navigate to the project page and open view
 view_url = os.getenv("GITHUB_VIEW_URL") 
-driver.get(view_url)
+driver.get(str(view_url))
 
 # wait for the page to load
 time.sleep(3)
@@ -58,18 +58,6 @@ issues_dict = {}
 # Scroll until the end of the page
 i = 0
 while i == 0:
-    # Get the current scroll position of the element
-    scroll_position = driver.execute_script("return arguments[0].scrollTop;", table_view)
-
-    # Get the maximum scroll position of the element
-    max_scroll_position = driver.execute_script("return arguments[0].scrollHeight - arguments[0].clientHeight;",table_view)
-
-    # Check if the scroll has reached the end
-    if scroll_position == max_scroll_position:
-        i = 1
-        print("🙌 Reading completed. ")
-        break;
-
     print("📝 Reading elements...")
     # Find all issues in the view
     issue_rows = driver.find_elements(By.CSS_SELECTOR, ".sc-fnGiBr.cPxcLo.hoverable")
@@ -86,13 +74,24 @@ while i == 0:
     # Wait for the page to load
     time.sleep(2)
 
-
     # Scroll down to the bottom of the table
     driver.execute_script("arguments[0].scrollBy(0, window.innerHeight / 1.5);", table_view)
     print("⚙️  Scrolling through elements...")
 
     # Wait for the page to load
     time.sleep(2)
+
+    # Get the current scroll position of the element
+    scroll_position = driver.execute_script("return arguments[0].scrollTop;", table_view)
+
+    # Get the maximum scroll position of the element
+    max_scroll_position = driver.execute_script("return arguments[0].scrollHeight - arguments[0].clientHeight;",table_view)
+
+    # Check if the scroll has reached the end
+    if scroll_position == max_scroll_position:
+        i = 1
+        print("🙌 Reading completed. ")
+        break;
 
 
 # close the browser
