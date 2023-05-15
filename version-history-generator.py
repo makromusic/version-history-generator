@@ -13,11 +13,29 @@ from selenium.common.exceptions import NoSuchElementException
 
 from dotenv import load_dotenv
 
-# Configure logging for your application
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Define a custom logging formatter
+class VhgFormatter(logging.Formatter):
+    def format(self, record):
+        record.msg = '[vhg] ' + record.msg
+        return super().format(record)
+
+# Define a custom formatter
+basic_formatter = '%(asctime)s - %(levelname)s - %(message)s'
 
 # Create a logger instance for your application
 logger = logging.getLogger(__name__)
+
+# Create a handler for the logger
+handler = logging.StreamHandler()
+
+# Set the formatter to VhgFormatter
+handler.setFormatter(VhgFormatter(basic_formatter))
+
+# Assign handler to the logger
+logger.addHandler(handler)
+
+# Set the level for the logger
 logger.setLevel(logging.DEBUG)
 
 # Load environment variables from .env file
@@ -127,13 +145,14 @@ while i == 0:
 
         # Get the label of the issue 
         try:
-            label = row.find_element(By.CSS_SELECTOR, ".Box-sc-g0xbh4-0.faEySC")
-            label_text = label.text
+            labels = row.find_element(By.CSS_SELECTOR, ".Box-sc-g0xbh4-0.faEySC")
+            label_text = labels.text
+            label_texts = label_text.split("\n")
         except NoSuchElementException:
             logger.error("Couldn't find the label element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
             sys.exit(1)
 
-        issues_dict[link_hash] = { "url": link_url, "title": link_text, "label": label_text, "state": state, "status": status_text } 
+        issues_dict[link_hash] = { "url": link_url, "title": link_text, "labels": label_texts, "state": state, "status": status_text } 
 
     # Wait for the page to load
     time.sleep(2)
@@ -172,37 +191,37 @@ documentation_list = []
 other_list =[]
 
 for value in issues_dict.values():
-    label = value["label"]
-    if label == "new-feature":
+    labels = value["labels"]
+    if "new-feature" in labels:
         new_feature_list.append(value)
-    elif label == "bug":
+    elif "bug" in labels:
         bug_list.append(value)
-    elif label == "refactor":
+    elif "refactor" in labels:
         refactor_list.append(value)
-    elif label == "enhancement":
+    elif "enhancement" in labels:
         enhancement_list.append(value)
-    elif label == "documentation":
+    elif "documentation" in labels:
         documentation_list.append(value)
     else:
         other_list.append(value)
-        
+
 def write_issue_list(buffer, issues):
     for issue in issues:
-        state_txt = ""
         state = int(issue["state"])
         if state == 0:
-            state_txt = "🦄 Closed"
-        if state == -1:
-            state_txt = "🐘 Canceled"
+            state = "🦄"
         if state == 1:
-            state_txt = "🐢 Open"
+            state = "🐢"
+        if state == -1:
+            state = "🐨"
 
         title = str(issue["title"])
         url = str(issue["url"])
         status = str(issue["status"])
         issue_id = url.split("/")[-1]
+        labels = "|".join(list(issue["labels"]))
         
-        line = "* **[{}]**: {} [[#{}]({})] [{}]\n".format(state_txt,title,issue_id,url, status)
+        line = "* **[{}] [{}] [{}]**: {} [[#{}]({})]\n".format(state, status, labels, title, issue_id, url)
         buffer.write(line)
     buffer.write("\n") 
 
