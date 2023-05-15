@@ -1,30 +1,39 @@
+
+import io
+import os
+import sys
+import time
+import hashlib
+import logging
+
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-import time
-import io
-import hashlib
-import dotenv
-import os
-from datetime import datetime
+from selenium.common.exceptions import NoSuchElementException
 
-version = input("What's version? (v1.0.0): ") or "v1.0.0"
-buildnm = input("What's build number? (b1.0): ") or "b1.0"
+from dotenv import load_dotenv
+
+# Configure logging for your application
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Create a logger instance for your application
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # Load environment variables from .env file
-dotenv.load_dotenv()
+load_dotenv()
 
 gh_username = os.getenv("GITHUB_USERNAME")
 gh_password = os.getenv("GITHUB_PASSWORD")
 
-print("🛫 Navigating to github login")
+logger.info("🛫 Navigating to github login")
 # create a new Chrome browser instance
 driver = webdriver.Chrome()
 
 # navigate to the Github login page
 driver.get("https://github.com/login")
 
-print("🎫 Entering login credentials")
+logger.info("🎫 Entering login credentials")
 # find the username input field by class name and enter your username
 username = driver.find_element(By.CLASS_NAME, "js-login-field")
 username.send_keys(gh_username)
@@ -37,7 +46,7 @@ password.send_keys(gh_password)
 login_button = driver.find_element(By.CLASS_NAME, "js-sign-in-button")
 login_button.click()
 
-print("🎫 Signing in...")
+logger.info("🎫 Signing in...")
 # wait for the page to load
 time.sleep(3)
 
@@ -49,34 +58,74 @@ driver.get(str(view_url))
 time.sleep(3)
 
 # Find table view
-table_view = driver.find_element(By.CSS_SELECTOR, ".Box-sc-g0xbh4-0.dCHmvW")
+try: 
+    table_view = driver.find_element(By.CSS_SELECTOR, ".Box-sc-g0xbh4-0.dCHmvW")
+except NoSuchElementException:
+    logger.error("Couldn't find the table element. This may be due to the update of the class names on Github. Please check the class names.")
+    sys.exit(1)
+        
 
-
-print("🔍 Starting to read elements.")
+logger.info("🔍 Starting to read elements.")
 issues_dict = {}
+
+# Define issue status literals
+issue_open = 1
+issue_closed = 0
+issue_closed_anp = -1
+issue_unknown = 9
 
 # Scroll until the end of the page
 i = 0
 while i == 0:
-    print("📝 Reading elements...")
+    logger.info("📝 Reading elements...")
     # Find all issues in the view
     issue_rows = driver.find_elements(By.CSS_SELECTOR, ".sc-fnGiBr.cPxcLo.hoverable")
+    if len(issue_rows) == 0:
+        logger.warning("Couldn't find any issue rows. This may be due to the update of the class names on Github. Please check the class names.")
     
+    issue_open_class= "gHFXvr"
+    issue_closed_class= "jLdgiv"
+    issue_closed_anp_class= "bzUJFx" 
+
     for row in issue_rows:
-        issue = row.find_element(By.CSS_SELECTOR, ".Link__StyledLink-sc-14289xe-0.kZAxfs")
+        # Get link and the link text of the issue
+        try: 
+            link = row.find_element(By.CSS_SELECTOR, ".Link__StyledLink-sc-14289xe-0.kZAxfs")
+            link_url = link.get_attribute("href")
+            link_text = link.text
+            link_hash = hashlib.sha256(link_url.encode('utf-8')).hexdigest()
+        except NoSuchElementException:
+            logger.error("Couldn't find the link element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
+            sys.exit(1)
+
+        status_image = row.find_element(By.CSS_SELECTOR, ".StyledOcticon-sc-1lhyyr-0")
+        status_class = status_image.get_attribute("class")
+        logger.debug("Status class of the issue is: " + status_class)
+        status = issue_unknown 
+        if issue_open_class in status_class:
+            status = issue_open 
+        elif issue_closed_class in status_class:
+            status = issue_closed
+        elif issue_closed_anp_class in status_class:
+            status = issue_closed_anp
+            
+        if status == issue_unknown:
+            logger.error("The status class of the issue is unknown. This may be due to the update of the class names on Github. Please check the class names.")
+            sys.exit(1)
+         
+        logger.debug("Status of the issue is: " + str(status))
+
         label = row.find_element(By.CSS_SELECTOR, ".Box-sc-g0xbh4-0.faEySC")
-        link_url = issue.get_attribute("href")
-        link_text = issue.text
-        link_hash = hashlib.sha256(link_url.encode('utf-8')).hexdigest()
         label_text = label.text
-        issues_dict[link_hash] = { "url": link_url, "title": link_text, "label": label_text } 
+
+        issues_dict[link_hash] = { "url": link_url, "title": link_text, "label": label_text, "status": status } 
 
     # Wait for the page to load
     time.sleep(2)
 
     # Scroll down to the bottom of the table
     driver.execute_script("arguments[0].scrollBy(0, window.innerHeight / 1.5);", table_view)
-    print("⚙️  Scrolling through elements...")
+    logger.info("⚙️  Scrolling through elements...")
 
     # Wait for the page to load
     time.sleep(2)
@@ -90,16 +139,14 @@ while i == 0:
     # Check if the scroll has reached the end
     if scroll_position == max_scroll_position:
         i = 1
-        print("🙌 Reading completed. ")
+        logger.info("🙌 Reading completed. ")
         break;
 
 
 # close the browser
 driver.quit()
 
-print("✏️  Creating markdown file...")
-now = datetime.now()
-formatted_date = now.strftime("%d.%m.%Y")
+logger.info("✏️  Creating markdown file...")
 
 # Define each issue category
 new_feature_list = []
@@ -126,16 +173,27 @@ for value in issues_dict.values():
         
 def write_issue_list(buffer, issues):
     for issue in issues:
-        title = issue["title"]
-        url = issue["url"]
-        label = issue["label"]
-        line = "* **[{}]**: {} [[{}]({})] \n".format(label,title,url,url)
+        status_txt = ""
+        status = int(issue["status"])
+        if status == 0:
+            status_txt = "🦄 Closed"
+        if status == -1:
+            status_txt = "🐘 Canceled"
+        if status == 1:
+            status_txt = "🐢 Open"
+
+        title = str(issue["title"])
+        url = str(issue["url"])
+        issue_id = url.split("/")[-1]
+        
+        line = "* **[{}]**: {} [[#{}]({})] \n".format(status_txt,title,issue_id,url)
         buffer.write(line)
     buffer.write("\n") 
 
 content_buff = io.StringIO()
 # Write h1 header
-content_buff.write("# makromusic {}-{} ({})\n\n".format(version, buildnm, formatted_date))
+markdown_title = os.getenv("MARKDOWN_TITLE")
+content_buff.write("# {}\n\n".format(markdown_title))
 
 # Write each issue category
 if len(new_feature_list) > 0:
@@ -158,11 +216,11 @@ if len(other_list) > 0:
     write_issue_list(content_buff, other_list)
 
 # Create markdown file
-name_prefix = os.getenv("MARKDOWN_SAVE_PREFIX")
-with open("{}_{}_{}.md".format(name_prefix, version, buildnm), 'w') as f:
+markdown_filename= os.getenv("MARKDOWN_FILENAME")
+with open("{}.md".format(markdown_filename), 'w') as f:
     f.write(content_buff.getvalue())
 
-print("✅ All steps completed.")
+logger.info("✅ All steps completed.")
 
 
 

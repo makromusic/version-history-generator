@@ -30,10 +30,11 @@ pip install -r requirements.txt
 # Github Credentials
 GITHUB_USERNAME=<your_github_username>
 GITHUB_PASSWORD=<your_github_password>
-# Project view url
-GITHUB_VIEW_URL=<your_project_view>
-# Markdown settings
-MARKDOWN_SAVE_PREFIX=<prefix>
+# Project View URL
+GITHUB_VIEW_URL=<project_view_url>
+# Markdown Settings
+MARKDOWN_FILENAME=<markdown_filename>
+MARKDOWN_TITLE=<markdown_title>
 ```
 
 Replace <your_github_username> with your GitHub username and <your_github_password> with a password. The URL of the project view that you want to retrieve issues from is referred to as <your_project_view>.
@@ -42,7 +43,7 @@ Usage
 To generate a version history, run the following command in the root directory of the cloned repository:
 
 ```bash
-python Version_history_generator.py
+python version-history-generator.py
 ```
 
 Conclusion
