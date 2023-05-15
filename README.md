@@ -15,7 +15,7 @@ Before using the script, you need to install Python and the necessary dependenci
 2. Clone the repository: Clone the repository to your local machine by running the following command in your terminal or command prompt:
 
 ```bash
-git clone https://github.com/makromusic/mobile-frontend.git
+git clone https://github.com/makromusic/version-history-generator.git
 ```
 
 3. Install dependencies: Install the required dependencies by running the following command in the root directory of the cloned repository:
