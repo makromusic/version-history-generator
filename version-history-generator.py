@@ -83,12 +83,13 @@ while i == 0:
     if len(issue_rows) == 0:
         logger.warning("Couldn't find any issue rows. This may be due to the update of the class names on Github. Please check the class names.")
     
+    # Define issue status literals
     issue_open_class= "gHFXvr"
     issue_closed_class= "jLdgiv"
     issue_closed_anp_class= "bzUJFx" 
 
     for row in issue_rows:
-        # Get link and the link text of the issue
+        # Get link and the title of the issue
         try: 
             link = row.find_element(By.CSS_SELECTOR, ".Link__StyledLink-sc-14289xe-0.kZAxfs")
             link_url = link.get_attribute("href")
@@ -97,28 +98,42 @@ while i == 0:
         except NoSuchElementException:
             logger.error("Couldn't find the link element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
             sys.exit(1)
-
-        status_image = row.find_element(By.CSS_SELECTOR, ".StyledOcticon-sc-1lhyyr-0")
-        status_class = status_image.get_attribute("class")
-        logger.debug("Status class of the issue is: " + status_class)
-        status = issue_unknown 
-        if issue_open_class in status_class:
-            status = issue_open 
-        elif issue_closed_class in status_class:
-            status = issue_closed
-        elif issue_closed_anp_class in status_class:
-            status = issue_closed_anp
-            
-        if status == issue_unknown:
-            logger.error("The status class of the issue is unknown. This may be due to the update of the class names on Github. Please check the class names.")
+        # Get the status of the issue
+        try: 
+            status = row.find_element(By.CSS_SELECTOR, ".Box-sc-g0xbh4-0.bnmKvJ")
+            status_text = status.text
+        except NoSuchElementException:
+            logger.error("Couldn't find the status element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
             sys.exit(1)
-         
-        logger.debug("Status of the issue is: " + str(status))
 
-        label = row.find_element(By.CSS_SELECTOR, ".Box-sc-g0xbh4-0.faEySC")
-        label_text = label.text
+        # Get the status of the issue 
+        try:
+            state_image = row.find_element(By.CSS_SELECTOR, ".StyledOcticon-sc-1lhyyr-0")
+            state_class = state_image.get_attribute("class")
+            state = issue_unknown 
+            if issue_open_class in state_class:
+                state = issue_open 
+            elif issue_closed_class in state_class:
+                state = issue_closed
+            elif issue_closed_anp_class in state_class:
+                state = issue_closed_anp
+                
+            if state == issue_unknown:
+                logger.error("The state class of the issue is unknown. This may be due to the update of the class names on Github. Please check the class names.")
+                sys.exit(1)
+        except NoSuchElementException:
+            logger.error("Couldn't find the state element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
+            sys.exit(1)
 
-        issues_dict[link_hash] = { "url": link_url, "title": link_text, "label": label_text, "status": status } 
+        # Get the label of the issue 
+        try:
+            label = row.find_element(By.CSS_SELECTOR, ".Box-sc-g0xbh4-0.faEySC")
+            label_text = label.text
+        except NoSuchElementException:
+            logger.error("Couldn't find the label element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
+            sys.exit(1)
+
+        issues_dict[link_hash] = { "url": link_url, "title": link_text, "label": label_text, "state": state, "status": status_text } 
 
     # Wait for the page to load
     time.sleep(2)
@@ -173,20 +188,21 @@ for value in issues_dict.values():
         
 def write_issue_list(buffer, issues):
     for issue in issues:
-        status_txt = ""
-        status = int(issue["status"])
-        if status == 0:
-            status_txt = "🦄 Closed"
-        if status == -1:
-            status_txt = "🐘 Canceled"
-        if status == 1:
-            status_txt = "🐢 Open"
+        state_txt = ""
+        state = int(issue["state"])
+        if state == 0:
+            state_txt = "🦄 Closed"
+        if state == -1:
+            state_txt = "🐘 Canceled"
+        if state == 1:
+            state_txt = "🐢 Open"
 
         title = str(issue["title"])
         url = str(issue["url"])
+        status = str(issue["status"])
         issue_id = url.split("/")[-1]
         
-        line = "* **[{}]**: {} [[#{}]({})] \n".format(status_txt,title,issue_id,url)
+        line = "* **[{}]**: {} [[#{}]({})] [{}]\n".format(state_txt,title,issue_id,url, status)
         buffer.write(line)
     buffer.write("\n") 
 
