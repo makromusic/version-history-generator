@@ -35,6 +35,10 @@ GITHUB_VIEW_URL=<project_view_url>
 # Markdown Settings
 MARKDOWN_FILENAME=<markdown_filename>
 MARKDOWN_TITLE=<markdown_title>
+# Put the section names you want to appear with a comma
+# between them. The order is not important.
+# Possible values are: "state,status,labels,title,link"
+MARKDOWN_FORMAT="state,labels,title,link"
 ```
 
 Replace <your_github_username> with your GitHub username and <your_github_password> with a password. The URL of the project view that you want to retrieve issues from is referred to as <your_project_view>.

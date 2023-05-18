@@ -205,8 +205,15 @@ for value in issues_dict.values():
     else:
         other_list.append(value)
 
+# Read markdown format string ("state,status,labels,title,link")
+md_format_str = os.getenv("MARKDOWN_FORMAT")
+if md_format_str == None:
+    md_format_str="state,status,labels,title,link"
+md_format_list = str(md_format_str).split(",")
+
 def write_issue_list(buffer, issues):
     for issue in issues:
+        # Convert values
         state = int(issue["state"])
         if state == 0:
             state = "🦄"
@@ -220,9 +227,37 @@ def write_issue_list(buffer, issues):
         status = str(issue["status"])
         issue_id = url.split("/")[-1]
         labels = "|".join(list(issue["labels"]))
+
+        # Generate issue line 
+        line_buff = io.StringIO()
+
+        line_buff.write("* ")
+        line_buff.write("**")
+
+        if "state" in md_format_list:
+            line_buff.write("[{}]".format(state))
+            if "status" in md_format_list or "labels" in md_format_list:
+                line_buff.write(" ")
+        if "status" in md_format_list:
+            line_buff.write("[{}]".format(status))
+            if "labels" in md_format_list:
+                line_buff.write(" ")
+        if "labels" in md_format_list:
+            line_buff.write("[{}]".format(labels))
+
+        line_buff.write("**")
+        line_buff.write(": ")
+
+        if "title" in md_format_list:
+            line_buff.write(title)
+            line_buff.write(" ")
         
-        line = "* **[{}] [{}] [{}]**: {} [[#{}]({})]\n".format(state, status, labels, title, issue_id, url)
-        buffer.write(line)
+        if "link" in md_format_list:
+            line_buff.write("[[#{}]({})]".format( issue_id, url))
+        line_buff.write("\n")
+
+        # Write issue line
+        buffer.write(line_buff.getvalue())
     buffer.write("\n") 
 
 content_buff = io.StringIO()
