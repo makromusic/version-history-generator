@@ -1,3 +1,4 @@
+#!/opt/homebrew/bin/python3
 
 import io
 import os
@@ -79,7 +80,7 @@ time.sleep(3)
 try: 
     table_view = driver.find_element(By.CSS_SELECTOR, ".Box-sc-g0xbh4-0.dCHmvW")
 except NoSuchElementException:
-    logger.error("Couldn't find the table element. This may be due to the update of the class names on Github. Please check the class names.")
+    logger.error("Table View: Couldn't find the table element. This may be due to the update of the class names on Github. Please check the class names.")
     sys.exit(1)
         
 
@@ -97,9 +98,9 @@ i = 0
 while i == 0:
     logger.info("📝 Reading elements...")
     # Find all issues in the view
-    issue_rows = driver.find_elements(By.CSS_SELECTOR, ".sc-fnGiBr.cPxcLo.hoverable")
+    issue_rows = driver.find_elements(By.CSS_SELECTOR, ".sc-kMjNwy.gVrXiy.hoverable")
     if len(issue_rows) == 0:
-        logger.warning("Couldn't find any issue rows. This may be due to the update of the class names on Github. Please check the class names.")
+        logger.warning("Issue Rows: Couldn't find any issue rows. This may be due to the update of the class names on Github. Please check the class names.")
     
     # Define issue status literals
     issue_open_class= "gHFXvr"
@@ -114,14 +115,14 @@ while i == 0:
             link_text = link.text
             link_hash = hashlib.sha256(link_url.encode('utf-8')).hexdigest()
         except NoSuchElementException:
-            logger.error("Couldn't find the link element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
+            logger.error("Link: Couldn't find the link element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
             sys.exit(1)
         # Get the status of the issue
         try: 
             status = row.find_element(By.CSS_SELECTOR, ".Box-sc-g0xbh4-0.bnmKvJ")
             status_text = status.text
         except NoSuchElementException:
-            logger.error("Couldn't find the status element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
+            logger.error("Status: Couldn't find the status element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
             sys.exit(1)
 
         # Get the status of the issue 
@@ -140,7 +141,7 @@ while i == 0:
                 logger.error("The state class of the issue is unknown. This may be due to the update of the class names on Github. Please check the class names.")
                 sys.exit(1)
         except NoSuchElementException:
-            logger.error("Couldn't find the state element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
+            logger.error("State: Couldn't find the state element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
             sys.exit(1)
 
         # Get the label of the issue 
@@ -149,7 +150,7 @@ while i == 0:
             label_text = labels.text
             label_texts = label_text.split("\n")
         except NoSuchElementException:
-            logger.error("Couldn't find the label element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
+            logger.error("Labels: Couldn't find the label element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
             sys.exit(1)
 
         issues_dict[link_hash] = { "url": link_url, "title": link_text, "labels": label_texts, "state": state, "status": status_text } 
@@ -232,7 +233,6 @@ def write_issue_list(buffer, issues):
         line_buff = io.StringIO()
 
         line_buff.write("* ")
-        line_buff.write("**")
 
         if "state" in md_format_list:
             line_buff.write("[{}]".format(state))
@@ -245,7 +245,6 @@ def write_issue_list(buffer, issues):
         if "labels" in md_format_list:
             line_buff.write("[{}]".format(labels))
 
-        line_buff.write("**")
         line_buff.write(": ")
 
         if "title" in md_format_list:
