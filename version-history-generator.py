@@ -78,7 +78,7 @@ time.sleep(3)
 
 # Find table view
 try: 
-    table_view = driver.find_element(By.CSS_SELECTOR, ".Box-sc-g0xbh4-0.dCHmvW")
+    table_view = driver.find_element(By.CSS_SELECTOR, ".Box-sc-g0xbh4-0.jRShZC")
 except NoSuchElementException:
     logger.error("Table View: Couldn't find the table element. This may be due to the update of the class names on Github. Please check the class names.")
     sys.exit(1)
@@ -98,7 +98,7 @@ i = 0
 while i == 0:
     logger.info("📝 Reading elements...")
     # Find all issues in the view
-    issue_rows = driver.find_elements(By.CSS_SELECTOR, ".sc-kMjNwy.gVrXiy.hoverable")
+    issue_rows = driver.find_elements(By.CSS_SELECTOR, ".sc-bYMpWt.irTAmX.hoverable")
     if len(issue_rows) == 0:
         logger.warning("Issue Rows: Couldn't find any issue rows. This may be due to the update of the class names on Github. Please check the class names.")
     
@@ -126,23 +126,25 @@ while i == 0:
             sys.exit(1)
 
         # Get the status of the issue 
-        try:
-            state_image = row.find_element(By.CSS_SELECTOR, ".StyledOcticon-sc-1lhyyr-0")
-            state_class = state_image.get_attribute("class")
-            state = issue_unknown 
-            if issue_open_class in state_class:
-                state = issue_open 
-            elif issue_closed_class in state_class:
-                state = issue_closed
-            elif issue_closed_anp_class in state_class:
-                state = issue_closed_anp
+        # try:
+            # state_image = row.find_element(By.CSS_SELECTOR, ".Octicon-sc-9kayk9-0.fxtjEX")
+            # state_class = state_image.get_attribute("class")
+            # state = issue_unknown 
+            # if issue_open_class in state_class:
+                # state = issue_open 
+            # elif issue_closed_class in state_class:
+                # state = issue_closed
+            # elif issue_closed_anp_class in state_class:
+                # state = issue_closed_anp
                 
-            if state == issue_unknown:
-                logger.error("The state class of the issue is unknown. This may be due to the update of the class names on Github. Please check the class names.")
-                sys.exit(1)
-        except NoSuchElementException:
-            logger.error("State: Couldn't find the state element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
-            sys.exit(1)
+            # if state == issue_unknown:
+                # logger.error("The state class of the issue is unknown. This may be due to the update of the class names on Github. Please check the class names.")
+                # sys.exit(1)
+        # except NoSuchElementException:
+            # logger.error("State: Couldn't find the state element of the issue. This may be due to the update of the class names on Github. Please check the class names.")
+            # sys.exit(1)
+
+        state = issue_closed
 
         # Get the label of the issue 
         try:
